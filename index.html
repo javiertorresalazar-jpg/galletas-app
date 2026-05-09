@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -226,8 +226,22 @@ function renderDashboard() {
     '<div class="stock-item"><div class="s-name">' + g + '</div><div class="s-qty">' + (s.stock[g] ?? 0) + '</div><div class="s-unit">unidades</div></div>'
   ).join('');
 }
-async function enviarGAS(hoja, encabezados, fila) {
-  const res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hoja, encabezados, fila }) });
+function enviarGAS(hoja, encabezados, fila) {
+  return new Promise((resolve, reject) => {
+    const callback = 'cb_' + Date.now();
+    const params = new URLSearchParams({ data: JSON.stringify({ hoja, encabezados, fila }) });
+    const script = document.createElement('script');
+    window[callback] = (resp) => {
+      delete window[callback];
+      document.body.removeChild(script);
+      if (resp && resp.resultado && resp.resultado !== 'OK') reject(new Error(resp.resultado));
+      else resolve(resp);
+    };
+    script.src = GAS_URL + '?callback=' + callback + '&' + params;
+    script.onerror = () => { delete window[callback]; document.body.removeChild(script); reject(new Error('Error de red')); };
+    document.body.appendChild(script);
+  });
+}, body: JSON.stringify({ hoja, encabezados, fila }) });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const data = await res.json();
   if (data.status === 'error') throw new Error(data.message || 'Error GAS');
