@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Galletas Artesanales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #FDF6EC;
+      --cafe:     #3E1F00;
+      --dorado:   #C8922A;
+      --blanco:   #FAF3E0;
+      --dorado-l: #F0C96A;
+      --cafe-l:   #6B3A1F;
+      --sombra:   rgba(62,31,0,.12);
+      --verde:    #2E7D32;
+      --rojo:     #C62828;
+      --radio:    14px;
+    }
+    html, body { height: 100%; background: #e8ddd0; font-family: 'Nunito', sans-serif; color: var(--cafe); }
+    #app { max-width: 390px; min-height: 100dvh; margin: 0 auto; background: var(--crema); display: flex; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,.18); }
+    header { background: var(--cafe); color: var(--dorado-l); padding: 18px 20px 14px; text-align: center; flex-shrink: 0; }
+    header h1 { font-family: 'Lora', serif; font-size: 1.35rem; letter-spacing: .5px; }
+    header p { font-size: .78rem; opacity: .7; margin-top: 2px; }
+    .screen { display: none; flex: 1; overflow-y: auto; padding: 18px 16px 90px; }
+    .screen.active { display: block; }
+    nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: var(--cafe); display: flex; z-index: 100; border-top: 2px solid var(--cafe-l); }
+    nav button { flex: 1; background: none; border: none; color: rgba(255,255,255,.5); padding: 10px 4px 8px; font-size: .65rem; font-family: 'Nunito', sans-serif; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: color .2s; }
+    nav button span.ico { font-size: 1.5rem; line-height: 1; }
+    nav button.active { color: var(--dorado-l); }
+    nav button:active { opacity: .7; }
+    .sec-title { font-family: 'Lora', serif; font-size: 1.1rem; color: var(--cafe); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid var(--dorado); display: flex; align-items: center; gap: 8px; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .kpi-card { background: var(--blanco); border-radius: var(--radio); padding: 14px 12px; box-shadow: 0 2px 8px var(--sombra); border-left: 4px solid var(--dorado); }
+    .kpi-card .kpi-label { font-size: .7rem; color: var(--cafe-l); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+    .kpi-card .kpi-value { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: var(--cafe); }
+    .kpi-card .kpi-sub { font-size: .7rem; color: var(--cafe-l); margin-top: 2px; }
+    .stock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stock-item { background: var(--cafe); color: var(--crema); border-radius: var(--radio); padding: 12px 10px; text-align: center; }
+    .stock-item .s-name { font-size: .72rem; opacity: .75; margin-bottom: 4px; }
+    .stock-item .s-qty { font-family: 'Lora', serif; font-size: 1.6rem; font-weight: 700; color: var(--dorado-l); }
+    .stock-item .s-unit { font-size: .68rem; opacity: .6; }
+    .form-card { background: var(--blanco); border-radius: var(--radio); padding: 18px 16px; box-shadow: 0 2px 10px var(--sombra); }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: .78rem; font-weight: 700; color: var(--cafe-l); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .3px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 13px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 1rem; font-family: 'Nunito', sans-serif; background: #fff; color: var(--cafe); appearance: none; -webkit-appearance: none; outline: none; transition: border-color .2s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--dorado); }
+    .field textarea { resize: none; min-height: 70px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .total-preview { background: var(--cafe); color: var(--dorado-l); border-radius: 10px; padding: 12px 14px; text-align: center; margin-bottom: 14px; font-family: 'Lora', serif; }
+    .total-preview small { display: block; font-size: .7rem; opacity: .7; font-family: 'Nunito', sans-serif; }
+    .total-preview strong { font-size: 1.6rem; }
+    .btn-main { width: 100%; min-height: 52px; background: var(--dorado); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 3px 10px rgba(200,146,42,.35); transition: background .2s, transform .1s; }
+    .btn-main:active { transform: scale(.97); }
+    .btn-main:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+    .toast { margin-top: 14px; padding: 12px 16px; border-radius: 10px; font-size: .88rem; font-weight: 600; text-align: center; display: none; }
+    .toast.ok  { background: #E8F5E9; color: var(--verde); border: 1px solid #A5D6A7; display: block; }
+    .toast.err { background: #FFEBEE; color: var(--rojo);  border: 1px solid #EF9A9A; display: block; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: var(--dorado); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>&#x1F36A; Galletas Artesanales</h1>
+    <p>Gestion de produccion y ventas</p>
+  </header>
+
+  <div id="s-inicio" class="screen active">
+    <div class="sec-title">&#x1F3E0; Resumen del negocio</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">&#x1F4B8; Gastado insumos</div>
+        <div class="kpi-value" id="k-gasto">$0</div>
+        <div class="kpi-sub">total acumulado</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">&#x1F36A; Total producido</div>
+        <div class="kpi-value" id="k-prod">0</div>
+        <div class="kpi-sub">unidades</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">&#x1F4B0; Total vendido</div>
+        <div class="kpi-value" id="k-ingreso">$0</div>
+        <div class="kpi-sub">ingresos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">&#x1F4E6; Unidades vendidas</div>
+        <div class="kpi-value" id="k-uven">0</div>
+        <div class="kpi-sub">galletas vendidas</div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title" style="font-size:.95rem;">&#x1F4E6; Stock actual</div>
+      <div class="stock-grid" id="stock-grid"></div>
+    </div>
+  </div>
+
+  <div id="s-compras" class="screen">
+    <div class="sec-title">&#x1F6D2; Registro de Compras</div>
+    <div class="form-card">
+      <div class="field"><label>Fecha</label><input type="date" id="c-fecha" /></div>
+      <div class="field">
+        <label>Insumo</label>
+        <select id="c-insumo">
+          <option value="">- Seleccionar -</option>
+          <option>Mantequilla</option><option>Azucar morena</option><option>Azucar blanca</option>
+          <option>Huevo</option><option>Esencia de vainilla</option><option>Harina</option>
+          <option>Polvo de hornear</option><option>Nutella</option><option>Crema</option>
+          <option>Lotus (pasta/galleta)</option><option>Queso crema</option><option>Azucar flor</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Cantidad</label><input type="number" id="c-cantidad" placeholder="0" min="0" step="any" /></div>
+        <div class="field">
+          <label>Unidad</label>
+          <select id="c-unidad">
+            <option value="">-</option><option>kg</option><option>g</option>
+            <option>unidades</option><option>litros</option><option>ml</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Precio Pagado ($)</label><input type="number" id="c-precio" placeholder="0" min="0" step="any" /></div>
+      <div class="field"><label>Proveedor (opcional)</label><input type="text" id="c-proveedor" placeholder="Nombre del proveedor..." /></div>
+      <button class="btn-main" id="btn-compra"><span>&#x1F4BE; Guardar Compra</span></button>
+      <div class="toast" id="t-compra"></div>
+    </div>
+  </div>
+
+  <div id="s-prod" class="screen">
+    <div class="sec-title">&#x1F36A; Registro de Produccion</div>
+    <div class="form-card">
+      <div class="field"><label>Fecha</label><input type="date" id="p-fecha" /></div>
+      <div class="field">
+        <label>Tipo de Galleta</label>
+        <select id="p-tipo">
+          <option value="">- Seleccionar -</option>
+          <option>Oreo</option><option>Brownie</option><option>Lotus</option><option>Red Velvet</option>
+        </select>
+      </div>
+      <div class="field"><label>Cantidad Producida (unidades)</label><input type="number" id="p-cantidad" placeholder="0" min="1" /></div>
+      <div class="field"><label>Nota (opcional)</label><textarea id="p-nota" placeholder="Observaciones del lote..."></textarea></div>
+      <button class="btn-main" id="btn-prod"><span>&#x1F4BE; Guardar Produccion</span></button>
+      <div class="toast" id="t-prod"></div>
+    </div>
+  </div>
+
+  <div id="s-ventas" class="screen">
+    <div class="sec-title">&#x1F4B0; Registro de Ventas</div>
+    <div class="form-card">
+      <div class="field"><label>Fecha</label><input type="date" id="v-fecha" /></div>
+      <div class="field">
+        <label>Tipo de Galleta</label>
+        <select id="v-tipo">
+          <option value="">- Seleccionar -</option>
+          <option>Oreo</option><option>Brownie</option><option>Lotus</option><option>Red Velvet</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Cantidad</label><input type="number" id="v-cantidad" placeholder="0" min="1" /></div>
+        <div class="field"><label>Precio Unit. ($)</label><input type="number" id="v-precio" placeholder="0" min="0" step="any" /></div>
+      </div>
+      <div class="total-preview">
+        <small>Total calculado</small>
+        <strong id="v-total-preview">$0</strong>
+      </div>
+      <div class="field">
+        <label>Canal de venta</label>
+        <select id="v-canal">
+          <option value="">- Seleccionar -</option>
+          <option>Presencial</option><option>WhatsApp</option><option>Encargo</option><option>Otro</option>
+        </select>
+      </div>
+      <button class="btn-main" id="btn-venta"><span>&#x1F4BE; Guardar Venta</span></button>
+      <div class="toast" id="t-venta"></div>
+    </div>
+  </div>
+
+  <nav>
+    <button data-screen="s-inicio" class="active"><span class="ico">&#x1F3E0;</span>Inicio</button>
+    <button data-screen="s-compras"><span class="ico">&#x1F6D2;</span>Compras</button>
+    <button data-screen="s-prod"><span class="ico">&#x1F36A;</span>Produccion</button>
+    <button data-screen="s-ventas"><span class="ico">&#x1F4B0;</span>Ventas</button>
+  </nav>
+</div>
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby9ne1t0v8AdbG7zIj1LCeeYzATTY5GwGSa8agbyJM_eFIjmmGrs1vrvKlznVkaW4RC/exec';
+const GALLETAS = ['Oreo', 'Brownie', 'Lotus', 'Red Velvet'];
+const LS = { get: k => JSON.parse(localStorage.getItem(k) || 'null'), set: (k, v) => localStorage.setItem(k, JSON.stringify(v)) };
+function getState() {
+  return LS.get('galletas_state') || { gastoInsumos: 0, totalProducido: 0, totalIngreso: 0, totalUnidadesVendidas: 0, stock: { Oreo: 0, Brownie: 0, Lotus: 0, 'Red Velvet': 0 }, pendientes: [] };
+}
+function saveState(s) { LS.set('galletas_state', s); }
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.screen).classList.add('active');
+    if (btn.dataset.screen === 's-inicio') renderDashboard();
+  });
+});
+function hoy() { return new Date().toISOString().slice(0, 10); }
+['c-fecha','p-fecha','v-fecha'].forEach(id => { const el = document.getElementById(id); if (el) el.value = hoy(); });
+function actualizarTotalVenta() {
+  const q = parseFloat(document.getElementById('v-cantidad').value) || 0;
+  const p = parseFloat(document.getElementById('v-precio').value) || 0;
+  document.getElementById('v-total-preview').textContent = '$' + fmt(q * p);
+}
+document.getElementById('v-cantidad').addEventListener('input', actualizarTotalVenta);
+document.getElementById('v-precio').addEventListener('input', actualizarTotalVenta);
+function fmt(n) { return Number(n).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+function renderDashboard() {
+  const s = getState();
+  document.getElementById('k-gasto').textContent   = '$' + fmt(s.gastoInsumos);
+  document.getElementById('k-prod').textContent    = fmt(s.totalProducido);
+  document.getElementById('k-ingreso').textContent = '$' + fmt(s.totalIngreso);
+  document.getElementById('k-uven').textContent    = fmt(s.totalUnidadesVendidas);
+  document.getElementById('stock-grid').innerHTML  = GALLETAS.map(g =>
+    '<div class="stock-item"><div class="s-name">' + g + '</div><div class="s-qty">' + (s.stock[g] ?? 0) + '</div><div class="s-unit">unidades</div></div>'
+  ).join('');
+}
+async function enviarGAS(hoja, encabezados, fila) {
+  const res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hoja, encabezados, fila }) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'Error GAS');
+  return data;
+}
+function setLoading(btn, label, on) {
+  btn.disabled = on;
+  btn.innerHTML = on ? '<span class="spinner"></span> Guardando...' : '<span>&#x1F4BE; ' + label + '</span>';
+}
+function showToast(id, msg, tipo) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'toast ' + tipo;
+  clearTimeout(el._t); el._t = setTimeout(() => { el.className = 'toast'; }, 4500);
+}
+function limpiarForm(...ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else if (el.type === 'date') el.value = hoy();
+    else el.value = '';
+  });
+}
+document.getElementById('btn-compra').addEventListener('click', async () => {
+  const fecha = document.getElementById('c-fecha').value;
+  const insumo = document.getElementById('c-insumo').value;
+  const cantidad = document.getElementById('c-cantidad').value;
+  const unidad = document.getElementById('c-unidad').value;
+  const precio = parseFloat(document.getElementById('c-precio').value);
+  const proveedor = document.getElementById('c-proveedor').value.trim();
+  if (!fecha || !insumo || !cantidad || !unidad || isNaN(precio)) { showToast('t-compra', 'Completa Fecha, Insumo, Cantidad, Unidad y Precio.', 'err'); return; }
+  const btn = document.getElementById('btn-compra');
+  setLoading(btn, 'Guardar Compra', true);
+  const enc = ['Fecha','Insumo','Cantidad','Unidad','Precio Pagado','Proveedor'];
+  const fila = [fecha, insumo, Number(cantidad), unidad, precio, proveedor];
+  try {
+    await enviarGAS('Compras', enc, fila);
+    const s = getState(); s.gastoInsumos += precio; saveState(s);
+    showToast('t-compra', 'Compra guardada correctamente.', 'ok');
+    limpiarForm('c-insumo','c-cantidad','c-unidad','c-precio','c-proveedor','c-fecha');
+  } catch(e) {
+    showToast('t-compra', 'Error al guardar: ' + e.message, 'err');
+    const s = getState(); s.gastoInsumos += precio; s.pendientes.push({ tipo:'Compras', enc, fila, ts: Date.now() }); saveState(s);
+  } finally { setLoading(btn, 'Guardar Compra', false); }
+});
+document.getElementById('btn-prod').addEventListener('click', async () => {
+  const fecha = document.getElementById('p-fecha').value;
+  const tipo = document.getElementById('p-tipo').value;
+  const cantidad = parseInt(document.getElementById('p-cantidad').value);
+  const nota = document.getElementById('p-nota').value.trim();
+  if (!fecha || !tipo || isNaN(cantidad) || cantidad < 1) { showToast('t-prod', 'Completa Fecha, Tipo y Cantidad.', 'err'); return; }
+  const btn = document.getElementById('btn-prod');
+  setLoading(btn, 'Guardar Produccion', true);
+  const enc = ['Fecha','Tipo Galleta','Cantidad Producida','Nota'];
+  const fila = [fecha, tipo, cantidad, nota];
+  const s = getState(); s.totalProducido += cantidad; s.stock[tipo] = (s.stock[tipo] || 0) + cantidad; saveState(s);
+  try {
+    await enviarGAS('Produccion', enc, fila);
+    showToast('t-prod', 'Produccion registrada correctamente.', 'ok');
+    limpiarForm('p-tipo','p-cantidad','p-nota','p-fecha');
+  } catch(e) {
+    showToast('t-prod', 'Error al guardar en Sheets: ' + e.message, 'err');
+    const s2 = getState(); s2.pendientes.push({ tipo:'Produccion', enc, fila, ts: Date.now() }); saveState(s2);
+  } finally { setLoading(btn, 'Guardar Produccion', false); }
+});
+document.getElementById('btn-venta').addEventListener('click', async () => {
+  const fecha = document.getElementById('v-fecha').value;
+  const tipo = document.getElementById('v-tipo').value;
+  const cantidad = parseInt(document.getElementById('v-cantidad').value);
+  const precio = parseFloat(document.getElementById('v-precio').value);
+  const canal = document.getElementById('v-canal').value;
+  if (!fecha || !tipo || isNaN(cantidad) || cantidad < 1 || isNaN(precio) || !canal) { showToast('t-venta', 'Completa todos los campos obligatorios.', 'err'); return; }
+  const s = getState();
+  if ((s.stock[tipo] || 0) < cantidad) { showToast('t-venta', 'Stock insuficiente de ' + tipo + ' (disponible: ' + (s.stock[tipo] || 0) + ' u).', 'err'); return; }
+  const total = cantidad * precio;
+  const btn = document.getElementById('btn-venta');
+  setLoading(btn, 'Guardar Venta', true);
+  const enc = ['Fecha','Tipo Galleta','Cantidad Vendida','Precio Unitario','Total','Canal'];
+  const fila = [fecha, tipo, cantidad, precio, total, canal];
+  s.totalIngreso += total; s.totalUnidadesVendidas += cantidad; s.stock[tipo] = Math.max(0, (s.stock[tipo] || 0) - cantidad); saveState(s);
+  try {
+    await enviarGAS('Ventas', enc, fila);
+    showToast('t-venta', 'Venta de $' + fmt(total) + ' registrada.', 'ok');
+    limpiarForm('v-tipo','v-cantidad','v-precio','v-canal','v-fecha');
+    document.getElementById('v-total-preview').textContent = '$0';
+  } catch(e) {
+    showToast('t-venta', 'Error al guardar en Sheets: ' + e.message, 'err');
+    const s2 = getState(); s2.pendientes.push({ tipo:'Ventas', enc, fila, ts: Date.now() }); saveState(s2);
+  } finally { setLoading(btn, 'Guardar Venta', false); }
+});
+renderDashboard();
+</script>
+</body>
+</html>
