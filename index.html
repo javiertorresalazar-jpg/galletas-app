@@ -190,7 +190,7 @@
   </nav>
 </div>
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby9ne1t0v8AdbG7zIj1LCeeYzATTY5GwGSa8agbyJM_eFIjmmGrs1vrvKlznVkaW4RC/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9ne1t0v8AdbG7zIj1LCeeYzATTY5GwGSa8agbyJM_eFIjmmGrs1vrvKlznVkaW4RC/exec';
 const GALLETAS = ['Oreo', 'Brownie', 'Lotus', 'Red Velvet'];
 const LS = { get: k => JSON.parse(localStorage.getItem(k) || 'null'), set: (k, v) => localStorage.setItem(k, JSON.stringify(v)) };
 function getState() {
@@ -226,26 +226,20 @@ function renderDashboard() {
     '<div class="stock-item"><div class="s-name">' + g + '</div><div class="s-qty">' + (s.stock[g] ?? 0) + '</div><div class="s-unit">unidades</div></div>'
   ).join('');
 }
-function enviarGAS(hoja, encabezados, fila) {
+function enviarASheets(datos) {
   return new Promise((resolve, reject) => {
     const callback = 'cb_' + Date.now();
-    const params = new URLSearchParams({ data: JSON.stringify({ hoja, encabezados, fila }) });
+    const params = new URLSearchParams({ data: JSON.stringify(datos), callback: callback });
     const script = document.createElement('script');
     window[callback] = (resp) => {
       delete window[callback];
       document.body.removeChild(script);
-      if (resp && resp.resultado && resp.resultado !== 'OK') reject(new Error(resp.resultado));
-      else resolve(resp);
+      resolve(resp);
     };
-    script.src = GAS_URL + '?callback=' + callback + '&' + params;
     script.onerror = () => { delete window[callback]; document.body.removeChild(script); reject(new Error('Error de red')); };
+    script.src = SCRIPT_URL + '?' + params.toString();
     document.body.appendChild(script);
   });
-}, body: JSON.stringify({ hoja, encabezados, fila }) });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const data = await res.json();
-  if (data.status === 'error') throw new Error(data.message || 'Error GAS');
-  return data;
 }
 function setLoading(btn, label, on) {
   btn.disabled = on;
@@ -274,16 +268,15 @@ document.getElementById('btn-compra').addEventListener('click', async () => {
   if (!fecha || !insumo || !cantidad || !unidad || isNaN(precio)) { showToast('t-compra', 'Completa Fecha, Insumo, Cantidad, Unidad y Precio.', 'err'); return; }
   const btn = document.getElementById('btn-compra');
   setLoading(btn, 'Guardar Compra', true);
-  const enc = ['Fecha','Insumo','Cantidad','Unidad','Precio Pagado','Proveedor'];
-  const fila = [fecha, insumo, Number(cantidad), unidad, precio, proveedor];
+  const datos = { hoja: 'Compras', encabezados: ['Fecha','Insumo','Cantidad','Unidad','Precio Pagado','Proveedor'], fila: [fecha, insumo, Number(cantidad), unidad, precio, proveedor] };
   try {
-    await enviarGAS('Compras', enc, fila);
+    await enviarASheets(datos);
     const s = getState(); s.gastoInsumos += precio; saveState(s);
     showToast('t-compra', 'Compra guardada correctamente.', 'ok');
     limpiarForm('c-insumo','c-cantidad','c-unidad','c-precio','c-proveedor','c-fecha');
   } catch(e) {
     showToast('t-compra', 'Error al guardar: ' + e.message, 'err');
-    const s = getState(); s.gastoInsumos += precio; s.pendientes.push({ tipo:'Compras', enc, fila, ts: Date.now() }); saveState(s);
+    const s = getState(); s.gastoInsumos += precio; s.pendientes.push({ ...datos, ts: Date.now() }); saveState(s);
   } finally { setLoading(btn, 'Guardar Compra', false); }
 });
 document.getElementById('btn-prod').addEventListener('click', async () => {
@@ -294,16 +287,15 @@ document.getElementById('btn-prod').addEventListener('click', async () => {
   if (!fecha || !tipo || isNaN(cantidad) || cantidad < 1) { showToast('t-prod', 'Completa Fecha, Tipo y Cantidad.', 'err'); return; }
   const btn = document.getElementById('btn-prod');
   setLoading(btn, 'Guardar Produccion', true);
-  const enc = ['Fecha','Tipo Galleta','Cantidad Producida','Nota'];
-  const fila = [fecha, tipo, cantidad, nota];
+  const datos = { hoja: 'Produccion', encabezados: ['Fecha','Tipo Galleta','Cantidad Producida','Nota'], fila: [fecha, tipo, cantidad, nota] };
   const s = getState(); s.totalProducido += cantidad; s.stock[tipo] = (s.stock[tipo] || 0) + cantidad; saveState(s);
   try {
-    await enviarGAS('Produccion', enc, fila);
+    await enviarASheets(datos);
     showToast('t-prod', 'Produccion registrada correctamente.', 'ok');
     limpiarForm('p-tipo','p-cantidad','p-nota','p-fecha');
   } catch(e) {
     showToast('t-prod', 'Error al guardar en Sheets: ' + e.message, 'err');
-    const s2 = getState(); s2.pendientes.push({ tipo:'Produccion', enc, fila, ts: Date.now() }); saveState(s2);
+    const s2 = getState(); s2.pendientes.push({ ...datos, ts: Date.now() }); saveState(s2);
   } finally { setLoading(btn, 'Guardar Produccion', false); }
 });
 document.getElementById('btn-venta').addEventListener('click', async () => {
@@ -318,17 +310,16 @@ document.getElementById('btn-venta').addEventListener('click', async () => {
   const total = cantidad * precio;
   const btn = document.getElementById('btn-venta');
   setLoading(btn, 'Guardar Venta', true);
-  const enc = ['Fecha','Tipo Galleta','Cantidad Vendida','Precio Unitario','Total','Canal'];
-  const fila = [fecha, tipo, cantidad, precio, total, canal];
+  const datos = { hoja: 'Ventas', encabezados: ['Fecha','Tipo Galleta','Cantidad Vendida','Precio Unitario','Total','Canal'], fila: [fecha, tipo, cantidad, precio, total, canal] };
   s.totalIngreso += total; s.totalUnidadesVendidas += cantidad; s.stock[tipo] = Math.max(0, (s.stock[tipo] || 0) - cantidad); saveState(s);
   try {
-    await enviarGAS('Ventas', enc, fila);
+    await enviarASheets(datos);
     showToast('t-venta', 'Venta de $' + fmt(total) + ' registrada.', 'ok');
     limpiarForm('v-tipo','v-cantidad','v-precio','v-canal','v-fecha');
     document.getElementById('v-total-preview').textContent = '$0';
   } catch(e) {
     showToast('t-venta', 'Error al guardar en Sheets: ' + e.message, 'err');
-    const s2 = getState(); s2.pendientes.push({ tipo:'Ventas', enc, fila, ts: Date.now() }); saveState(s2);
+    const s2 = getState(); s2.pendientes.push({ ...datos, ts: Date.now() }); saveState(s2);
   } finally { setLoading(btn, 'Guardar Venta', false); }
 });
 renderDashboard();
